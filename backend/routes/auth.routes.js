@@ -1,0 +1,17 @@
+const express = require('express')
+const router = express.Router()
+const { register, login, getProfile, verifyOTP, uploadStudentId, getPendingStudentVerifications, approveStudentVerification, requireStudentRenewal, roleHome, getAllUsers, updateUserRole } = require('../controllers/auth.controller')
+const { protect, adminOnly, authorizeRoles } = require('../middleware/auth.middleware')
+
+router.post('/register', register)
+router.post('/login', login)
+router.post('/verify-otp', verifyOTP)
+router.get('/profile', protect, getProfile)
+router.post('/student-id-upload', protect, uploadStudentId)
+router.get('/home', protect, roleHome)
+router.get('/admin/users', protect, adminOnly, getAllUsers)
+router.post('/admin/users/:userId/role', protect, adminOnly, updateUserRole)
+router.get('/admin/pending-student-verifications', protect, adminOnly, getPendingStudentVerifications)
+router.post('/admin/approve-student/:userId', protect, adminOnly, approveStudentVerification)
+router.post('/admin/require-student-renewal/:userId', protect, adminOnly, requireStudentRenewal)
+module.exports = router
