@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema({
   studentVerificationExpiry: {
     type: Date
   },
+  // Preferred pickup location for reminder timing adjustment
+  preferredPickupLocation: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
