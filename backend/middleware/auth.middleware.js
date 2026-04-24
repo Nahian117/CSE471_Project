@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken')
+const User = require('../models/User')
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -10,6 +11,12 @@ const protect = (req, res, next) => {
     const decoded = jwt.verify(token, process.env.JWT_SECRET)
     req.userId = decoded.userId
     req.userRole = decoded.role
+
+    const user = await User.findById(req.userId)
+    if (!user) {
+      return res.status(401).json({ message: 'User not found' })
+    }
+    req.user = user
     next()
   } catch (err) {
     res.status(401).json({ message: 'Invalid or expired token' })

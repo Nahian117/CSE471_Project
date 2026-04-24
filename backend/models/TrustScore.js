@@ -32,7 +32,6 @@ trustScoreSchema.pre('save', function() {
   const ageScore = Math.min(monthsOld * 2, 10)
   this.breakdown = { txScore, reviewScore, disputeScore, ageScore }
   this.score = txScore + reviewScore + disputeScore + ageScore
-  return Promise.resolve()
 })
 
 module.exports = mongoose.model('TrustScore', trustScoreSchema)

@@ -98,23 +98,31 @@ const login = async (req, res) => {
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@g.bracu.ac.bd').toLowerCase()
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
 
-    if (normalizedEmail === adminEmail && password === adminPassword) {
+    // Admin login — check against stored hash (admin was created with hashed password)
+    if (normalizedEmail === adminEmail) {
       let adminUser = await User.findOne({ email: normalizedEmail })
       if (!adminUser) {
+        // First time: create admin with hashed password via pre('save')
         adminUser = new User({
           name: 'Administrator',
           email: normalizedEmail,
-          password,
+          password: adminPassword,
           role: 'admin',
           isEmailVerified: true
         })
         await adminUser.save()
-      } else if (adminUser.role !== 'admin') {
+      }
+      // Verify password using bcrypt
+      const isAdminMatch = await adminUser.comparePassword(password)
+      if (!isAdminMatch) {
+        return res.status(401).json({ message: 'Invalid email or password' })
+      }
+      // Ensure admin role is set
+      if (adminUser.role !== 'admin') {
         adminUser.role = 'admin'
         adminUser.isEmailVerified = true
         await adminUser.save()
       }
-
       const token = generateToken(adminUser._id, adminUser.role)
       return res.json({
         message: 'Admin login successful',
