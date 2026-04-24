@@ -4,11 +4,12 @@ const cors = require('cors')
 require('dotenv').config()
 
 const User = require('./models/User')
+const { startReminderJob } = require('./utils/reminderJob')
 
 const app = express()
 
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
   credentials: true
 }))
 
@@ -24,6 +25,15 @@ const trustScoreRoutes = require('./routes/trustScore.routes')
 app.use('/api/trust-score', trustScoreRoutes)
 const authRoutes = require('./routes/auth.routes')
 app.use('/api/auth', authRoutes)
+
+const productRoutes = require('./routes/product.routes')
+app.use('/api/products', productRoutes)
+const messageRoutes = require('./routes/message.routes')
+app.use('/api/messages', messageRoutes)
+const filterRoutes = require('./routes/filter.routes')
+app.use('/api/filters', filterRoutes)
+const notificationRoutes = require('./routes/notification.routes')
+app.use('/api/notifications', notificationRoutes)
 
 app.use((err, req, res, next) => {
   console.error('GLOBAL ERROR', err)
@@ -46,6 +56,7 @@ mongoose.connect(process.env.MONGO_URI, {
 
     let adminUser = await User.findOne({ email: adminEmail })
     if (!adminUser) {
+      // Create admin for the first time — pre('save') will hash the password
       adminUser = new User({
         name: 'Administrator',
         email: adminEmail,
@@ -56,10 +67,11 @@ mongoose.connect(process.env.MONGO_URI, {
       await adminUser.save()
       console.log(`Default admin user created: ${adminEmail}`)
     } else {
-      adminUser.role = 'admin'
-      adminUser.password = adminPassword
-      adminUser.isEmailVerified = true
-      await adminUser.save()
+      // Only fix role/verification, do NOT touch password to avoid double-hashing
+      let changed = false
+      if (adminUser.role !== 'admin') { adminUser.role = 'admin'; changed = true }
+      if (!adminUser.isEmailVerified) { adminUser.isEmailVerified = true; changed = true }
+      if (changed) await adminUser.save()
       console.log(`Default admin credentials ensured for: ${adminEmail}`)
     }
   })
@@ -67,4 +79,5 @@ mongoose.connect(process.env.MONGO_URI, {
 
 app.listen(5000, () => {
   console.log('Server started on port 5000')
+  startReminderJob()
 })
