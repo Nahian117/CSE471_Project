@@ -9,7 +9,11 @@ const { startReminderJob } = require('./utils/reminderJob')
 const app = express()
 
 app.use(cors({
-  origin: "https://cse471-project-3.onrender.com"
+  origin: [
+    "http://localhost:3000",
+    "https://cse471-project-3.onrender.com"
+  ],
+  credentials: true
 }));
 
 app.use(express.json({ limit: '10mb' }))
@@ -43,10 +47,7 @@ app.get('/', (req, res) => {
   res.send('Server is running!')
 })
 
-mongoose.connect(process.env.MONGO_URI, {
-  serverSelectionTimeoutMS: 5000,
-  family: 4
-})
+mongoose.connect(process.env.MONGO_URI)
   .then(async () => {
     console.log('MongoDB connected!')
 
