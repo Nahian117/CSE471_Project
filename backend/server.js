@@ -9,9 +9,8 @@ const { startReminderJob } = require('./utils/reminderJob')
 const app = express()
 
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}))
+  origin: "https://cse471-project-3.onrender.com"
+}));
 
 app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, limit: '10mb' }))
