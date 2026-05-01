@@ -73,7 +73,7 @@ function RoleHome({ user }) {
       style={{
         background: '#16143a',
         borderRadius: '16px',
-        border: '1px solid '#2a2a2a',
+        border: '1px solid #2a2a2a',
         padding: '20px',
         marginTop: '16px'
       }}
