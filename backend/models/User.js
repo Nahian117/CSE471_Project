@@ -48,11 +48,58 @@ const userSchema = new mongoose.Schema({
   studentVerificationExpiry: {
     type: Date
   },
+  // OCR Auto-Verification fields
+  ocrExtractedText: {
+    type: String,
+    default: ''
+  },
+  ocrVerificationStatus: {
+    type: String,
+    enum: ['not_processed', 'auto_verified', 'auto_failed', 'pending_manual'],
+    default: 'not_processed'
+  },
+  ocrConfidence: {
+    type: Number, // 0-100 match score
+    default: 0
+  },
+  ocrProcessedAt: {
+    type: Date
+  },
+  // Preferred pickup location for reminder timing adjustment
+  preferredPickupLocation: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   isEmailVerified: {
     type: Boolean,
     default: false
   },
+  walletBalance: {
+    type: Number,
+    default: 10000 // Give dummy balance for testing
+  },
+  escrowBalance: {
+    type: Number,
+    default: 0
+  },
+  averageRating: {
+    type: Number,
+    default: 0
+  },
+  totalReviews: {
+    type: Number,
+    default: 0
+  },
+  wishlist: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Product'
+  }],
   isStudentVerified: {
+    type: Boolean,
+    default: false
+  },
+  isSuspended: {
     type: Boolean,
     default: false
   },
@@ -61,6 +108,17 @@ const userSchema = new mongoose.Schema({
   },
   emailOTPExpiry: {
     type: Date
+  },
+  // Firebase Cloud Messaging
+  fcmToken: {
+    type: String,
+    default: null
+  },
+  notificationPreferences: {
+    transactions: { type: Boolean, default: true },
+    disputes:     { type: Boolean, default: true },
+    wishlist:     { type: Boolean, default: true },
+    adminActions: { type: Boolean, default: true },
   }
 }, { timestamps: true })
 

@@ -4,6 +4,7 @@ import axios from 'axios'
 function Register({ onSwitch, onLogin }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', studentType: 'buyer' })
   const [otp, setOtp] = useState('')
+  const [generatedOtp, setGeneratedOtp] = useState('') // OTP from backend for dev testing
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [step, setStep] = useState('register') // 'register' or 'verify'
@@ -23,6 +24,7 @@ function Register({ onSwitch, onLogin }) {
     setLoading(true)
     try {
       const res = await axios.post('http://localhost:5000/api/auth/register', form)
+      if (res.data.otp) setGeneratedOtp(res.data.otp) // Show OTP for dev/testing
       setStep('verify')
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed')
@@ -52,8 +54,16 @@ function Register({ onSwitch, onLogin }) {
           {step === 'register' ? 'Create account' : 'Verify Email'}
         </h2>
         <p style={{ color: '#555', fontSize: '13px', margin: '0 0 24px' }}>
-          {step === 'register' ? 'BRACU Second-Hand Marketplace' : 'Enter the 4-digit OTP sent to your email'}
+          {step === 'register' ? 'BRACU Second-Hand Marketplace' : `Enter the 4-digit OTP sent to ${form.email}`}
         </p>
+
+        {/* Dev OTP hint box — shows OTP from backend response */}
+        {step === 'verify' && generatedOtp && (
+          <div style={{ background: '#0a1a0a', border: '1px solid #16a34a', borderRadius: '10px', padding: '12px 16px', marginBottom: '16px', textAlign: 'center' }}>
+            <div style={{ color: '#888', fontSize: '11px', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '1px' }}>Your OTP (Dev Mode)</div>
+            <div style={{ color: '#4ade80', fontSize: '28px', fontWeight: 900, letterSpacing: '8px' }}>{generatedOtp}</div>
+          </div>
+        )}
 
         {error && (
           <div style={{ background: '#1a0a0a', border: '1px solid #A32D2D', borderRadius: '8px', padding: '10px 14px', color: '#F09595', fontSize: '13px', marginBottom: '16px' }}>

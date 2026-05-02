@@ -1,0 +1,348 @@
+/* ── Root ─────────────────────────────────────────────────────── */
+.sf-root {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 4px 0;
+}
+
+/* ── Generic card ─────────────────────────────────────────────── */
+.sf-card {
+  background: #141420;
+  border: 1px solid #2f2f44;
+  border-radius: 20px;
+  padding: 20px;
+}
+
+.sf-card-header {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.sf-icon {
+  font-size: 22px;
+  margin-top: 2px;
+}
+
+.sf-card-title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sf-card-sub {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* ── Form grid ────────────────────────────────────────────────── */
+.sf-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.sf-span-2,
+.sf-span-full {
+  grid-column: 1 / -1;
+}
+
+.sf-input {
+  background: #1f1f2e;
+  border: 1px solid #2f2f44;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 13px;
+  padding: 10px 13px;
+  font-family: inherit;
+  transition: border-color 0.2s;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.sf-input:focus {
+  outline: none;
+  border-color: #534AB7;
+}
+
+.sf-input::placeholder {
+  color: #444;
+}
+
+/* ── University toggle section ────────────────────────────────── */
+.sf-uni-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #1a1a2e;
+  border: 1px solid #2f2f44;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.sf-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.sf-toggle-label {
+  color: #ccc;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  cursor: pointer;
+}
+
+.sf-toggle-sub {
+  font-size: 11px;
+  color: #555;
+  font-weight: 400;
+}
+
+/* Custom toggle switch */
+.sf-toggle-btn {
+  width: 44px;
+  height: 24px;
+  border-radius: 12px;
+  background: #2f2f44;
+  border: none;
+  cursor: pointer;
+  position: relative;
+  flex-shrink: 0;
+  transition: background 0.2s;
+  padding: 0;
+}
+
+.sf-toggle-btn.active {
+  background: #534AB7;
+}
+
+.sf-toggle-knob {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 0.2s;
+}
+
+.sf-toggle-btn.active .sf-toggle-knob {
+  transform: translateX(20px);
+}
+
+/* ── Status messages ──────────────────────────────────────────── */
+.sf-status {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.sf-status.success {
+  background: #0e2a15;
+  border: 1px solid #1a5c2a;
+  color: #6BCB77;
+}
+
+.sf-status.error {
+  background: #2c1212;
+  border: 1px solid #5c1a1a;
+  color: #f09595;
+}
+
+/* ── Save button ──────────────────────────────────────────────── */
+.sf-save-btn {
+  width: 100%;
+  background: linear-gradient(135deg, #534AB7, #4f46e5);
+  color: #fff;
+  border: none;
+  border-radius: 12px;
+  padding: 13px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+  font-family: inherit;
+}
+
+.sf-save-btn:hover:not(:disabled) {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.sf-save-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ── Section label ────────────────────────────────────────────── */
+.sf-section-label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #555;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 2px;
+}
+
+.sf-count {
+  background: #2a2a3e;
+  color: #AFA9EC;
+  border-radius: 10px;
+  font-size: 11px;
+  padding: 1px 8px;
+}
+
+/* ── Empty state ──────────────────────────────────────────────── */
+.sf-empty {
+  color: #444;
+  text-align: center;
+  padding: 32px 20px;
+  font-size: 13px;
+  background: #141420;
+  border: 1px dashed #2f2f44;
+  border-radius: 16px;
+  line-height: 1.6;
+}
+
+/* ── Filter cards list ────────────────────────────────────────── */
+.sf-filters-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sf-filter-card {
+  background: #141420;
+  border: 1px solid #2f2f44;
+  border-radius: 16px;
+  padding: 16px;
+  transition: border-color 0.2s;
+}
+
+.sf-filter-card:hover {
+  border-color: #534AB7;
+}
+
+.sf-filter-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.sf-filter-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: #2a1f5e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.sf-filter-info {
+  flex: 1;
+}
+
+.sf-filter-name {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.sf-filter-last {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #555;
+}
+
+/* Active indicator dot */
+.sf-active-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #10b981;
+  box-shadow: 0 0 6px #10b981;
+  flex-shrink: 0;
+}
+
+/* ── Chips ────────────────────────────────────────────────────── */
+.sf-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sf-chip {
+  background: #1f1f2e;
+  border: 1px solid #3a3a55;
+  border-radius: 8px;
+  color: #AFA9EC;
+  font-size: 11px;
+  padding: 3px 10px;
+  font-weight: 600;
+}
+
+/* ── Filter action buttons ────────────────────────────────────── */
+.sf-filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.sf-apply-btn {
+  flex: 1;
+  background: #1a1a3e;
+  color: #AFA9EC;
+  border: 1px solid #534AB7;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+  font-family: inherit;
+}
+
+.sf-apply-btn:hover {
+  background: #534AB7;
+  color: #fff;
+}
+
+.sf-delete-btn {
+  background: #2c1212;
+  color: #f09595;
+  border: 1px solid #5c1a1a;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-family: inherit;
+}
+
+.sf-delete-btn:hover {
+  background: #7f1d1d;
+  color: #fff;
+}

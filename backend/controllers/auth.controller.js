@@ -2,6 +2,13 @@ const User = require('../models/User')
 const jwt = require('jsonwebtoken')
 const TrustScore = require('../models/TrustScore')
 const { sendOTP } = require('../utils/email')
+const Product = require('../models/Product')
+const Transaction = require('../models/Transaction')
+const Dispute = require('../models/Dispute')
+const Report = require('../models/Report')
+const { verifyStudentId } = require('../utils/visionOcr')
+const path = require('path')
+const FCM = require('../utils/fcm')
 
 const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, process.env.JWT_SECRET, { expiresIn: '7d' })
@@ -98,23 +105,31 @@ const login = async (req, res) => {
     const adminEmail = (process.env.ADMIN_EMAIL || 'admin@g.bracu.ac.bd').toLowerCase()
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123'
 
-    if (normalizedEmail === adminEmail && password === adminPassword) {
+    // Admin login — check against stored hash (admin was created with hashed password)
+    if (normalizedEmail === adminEmail) {
       let adminUser = await User.findOne({ email: normalizedEmail })
       if (!adminUser) {
+        // First time: create admin with hashed password via pre('save')
         adminUser = new User({
           name: 'Administrator',
           email: normalizedEmail,
-          password,
+          password: adminPassword,
           role: 'admin',
           isEmailVerified: true
         })
         await adminUser.save()
-      } else if (adminUser.role !== 'admin') {
+      }
+      // Verify password using bcrypt
+      const isAdminMatch = await adminUser.comparePassword(password)
+      if (!isAdminMatch) {
+        return res.status(401).json({ message: 'Invalid email or password' })
+      }
+      // Ensure admin role is set
+      if (adminUser.role !== 'admin') {
         adminUser.role = 'admin'
         adminUser.isEmailVerified = true
         await adminUser.save()
       }
-
       const token = generateToken(adminUser._id, adminUser.role)
       return res.json({
         message: 'Admin login successful',
@@ -202,8 +217,16 @@ const verifyOTP = async (req, res) => {
 }
 
 const uploadStudentId = async (req, res) => {
+  console.log('[uploadStudentId] Called. file:', req.file?.originalname, '| body keys:', Object.keys(req.body));
   try {
-    const { studentId, studentIdImage, studentType } = req.body
+    const { studentId, studentType } = req.body;
+
+    let studentIdImage = req.body.studentIdImage;
+    let localImagePath = null;
+    if (req.file) {
+      studentIdImage = `/uploads/${req.file.filename}`;
+      localImagePath = req.file.path;
+    }
 
     if (!studentId || !studentIdImage) {
       return res.status(400).json({ message: 'Student ID number and image are required' })
@@ -214,19 +237,55 @@ const uploadStudentId = async (req, res) => {
       return res.status(404).json({ message: 'User not found' })
     }
 
-    if (!user.isEmailVerified) {
-      return res.status(403).json({ message: 'Verify your email before uploading student ID' })
-    }
-
     user.studentId = studentId.trim()
     user.studentType = ['buyer', 'seller'].includes(studentType) ? studentType : user.studentType
     user.studentIdImage = studentIdImage
     user.studentVerificationStatus = 'pending'
     user.isStudentVerified = false
+
+    // ── Google Cloud Vision OCR ──────────────────────────────────────
+    let ocrMessage = 'Student ID uploaded. Awaiting admin approval.';
+    if (localImagePath) {
+      try {
+        const { extractedText, confidence, status } = await verifyStudentId(
+          localImagePath,
+          studentId.trim(),
+          user.name
+        );
+
+        user.ocrExtractedText = extractedText;
+        user.ocrConfidence    = confidence;
+        user.ocrVerificationStatus = status;
+        user.ocrProcessedAt   = new Date();
+
+        if (status === 'auto_verified') {
+          // Auto-approve — mark as verified immediately
+          user.studentVerificationStatus = 'approved';
+          user.isStudentVerified = true;
+          user.studentVerificationExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000);
+          ocrMessage = `Student ID auto-verified successfully! (Confidence: ${confidence}%)`;
+        } else if (status === 'auto_failed') {
+          // Keep as pending but flag low confidence
+          ocrMessage = `OCR could not match your ID (confidence: ${confidence}%). Sent for manual admin review.`;
+        } else {
+          // pending_manual — partial match
+          ocrMessage = `OCR found a partial match (confidence: ${confidence}%). An admin will review your submission.`;
+        }
+      } catch (ocrErr) {
+        console.error('[OCR] Failed to process image:', ocrErr.message);
+        // OCR failed — fall back to manual review silently
+        user.ocrVerificationStatus = 'pending_manual';
+        ocrMessage = 'Student ID uploaded. Awaiting admin approval.';
+      }
+    }
+    // ────────────────────────────────────────────────────────────────
+
     await user.save()
 
     res.json({
-      message: 'Student ID uploaded successfully. Awaiting admin approval.',
+      message: ocrMessage,
+      ocrStatus: user.ocrVerificationStatus,
+      ocrConfidence: user.ocrConfidence,
       user: buildUserPayload(user)
     })
   } catch (err) {
@@ -236,8 +295,9 @@ const uploadStudentId = async (req, res) => {
 
 const getPendingStudentVerifications = async (req, res) => {
   try {
-    const pendingUsers = await User.find({ studentVerificationStatus: 'pending' })
-      .select('name email studentId studentVerificationStatus')
+    const pendingUsers = await User.find({
+      studentVerificationStatus: { $in: ['pending'] }
+    }).select('name email studentId studentIdImage studentVerificationStatus ocrExtractedText ocrVerificationStatus ocrConfidence ocrProcessedAt')
 
     res.json(pendingUsers)
   } catch (err) {
@@ -257,6 +317,9 @@ const approveStudentVerification = async (req, res) => {
     user.isStudentVerified = true
     user.studentVerificationExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
     await user.save()
+
+    // FCM push notification
+    FCM.studentVerification(user, true).catch(() => {});
 
     res.json({
       message: 'Student ID verified successfully',
@@ -291,7 +354,7 @@ const requireStudentRenewal = async (req, res) => {
 
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().select('name email role studentType studentVerificationStatus studentId isStudentVerified studentVerificationExpiry')
+    const users = await User.find().select('name email role studentType studentVerificationStatus studentId isStudentVerified studentVerificationExpiry isSuspended')
 
     res.json(users.map((user) => ({
       id: user._id,
@@ -302,7 +365,8 @@ const getAllUsers = async (req, res) => {
       studentVerificationStatus: user.studentVerificationStatus,
       studentId: user.studentId || undefined,
       isStudentVerified: user.isStudentVerified,
-      studentVerificationExpiry: user.studentVerificationExpiry || undefined
+      studentVerificationExpiry: user.studentVerificationExpiry || undefined,
+      isSuspended: user.isSuspended || false
     })))
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message })
@@ -375,4 +439,96 @@ const roleHome = async (req, res) => {
   }
 }
 
-module.exports = { register, login, getProfile, verifyOTP, uploadStudentId, getPendingStudentVerifications, approveStudentVerification, requireStudentRenewal, roleHome, getAllUsers, updateUserRole }
+const toggleUserSuspension = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    if (user.role === 'admin') {
+      return res.status(400).json({ message: 'Cannot suspend an admin' });
+    }
+
+    user.isSuspended = !user.isSuspended;
+    await user.save();
+
+    // FCM push notification
+    FCM.accountStatus(user, user.isSuspended).catch(() => {});
+
+    res.json({
+      message: `User ${user.isSuspended ? 'suspended' : 'unsuspended'} successfully`,
+      isSuspended: user.isSuspended
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+const getSystemAnalytics = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const activeListings = await Product.countDocuments({ isActive: true });
+    const completedTransactions = await Transaction.countDocuments({ status: 'completed' });
+    const totalTransactions = await Transaction.countDocuments();
+    const openDisputes = await Dispute.countDocuments({ status: 'open' });
+    
+    // Revenue or Total Escrowed could also be calculated
+    const transactions = await Transaction.find({ status: 'completed' });
+    const totalVolume = transactions.reduce((sum, t) => sum + t.amount, 0);
+
+    const universityWiseActivity = await Product.aggregate([
+      { $group: { _id: "$university", count: { $sum: 1 } } },
+      { $sort: { count: -1 } }
+    ]);
+
+    const totalFraudReports = await Report.countDocuments();
+
+    res.json({
+      totalUsers,
+      activeListings,
+      completedTransactions,
+      totalTransactions,
+      openDisputes,
+      totalVolume,
+      universityWiseActivity,
+      totalFraudReports
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
+const saveFcmToken = async (req, res) => {
+  try {
+    const { token } = req.body;
+    if (!token) return res.status(400).json({ message: 'FCM token is required' });
+    const user = await User.findByIdAndUpdate(
+      req.userId,
+      { fcmToken: token },
+      { new: true }
+    );
+    res.json({ message: 'FCM token saved', fcmToken: user.fcmToken });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+const updateNotificationPrefs = async (req, res) => {
+  try {
+    const { transactions, disputes, wishlist, adminActions } = req.body;
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (transactions  !== undefined) user.notificationPreferences.transactions  = transactions;
+    if (disputes      !== undefined) user.notificationPreferences.disputes      = disputes;
+    if (wishlist      !== undefined) user.notificationPreferences.wishlist      = wishlist;
+    if (adminActions  !== undefined) user.notificationPreferences.adminActions  = adminActions;
+    await user.save();
+    res.json({ message: 'Preferences updated', preferences: user.notificationPreferences });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+module.exports = { register, login, getProfile, verifyOTP, uploadStudentId, getPendingStudentVerifications, approveStudentVerification, requireStudentRenewal, roleHome, getAllUsers, updateUserRole, toggleUserSuspension, getSystemAnalytics, saveFcmToken, updateNotificationPrefs }
