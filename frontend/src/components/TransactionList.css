@@ -1,0 +1,162 @@
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+.transaction-card {
+  background: #1a1a2a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.transaction-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #2a2a2a;
+  padding-bottom: 12px;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.request { background: #3b82f6; color: white; }
+.status-badge.accepted { background: #8b5cf6; color: white; }
+.status-badge.payment_confirmed { background: #eab308; color: black; }
+.status-badge.delivered, .status-badge.completed { background: #22c55e; color: white; }
+.status-badge.cancelled { background: #ef4444; color: white; }
+
+.transaction-date {
+  color: #888;
+  font-size: 13px;
+}
+
+.transaction-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.product-info {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.product-info img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.placeholder-img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+
+.product-info h4 {
+  margin: 0 0 4px 0;
+  color: #fff;
+  font-size: 16px;
+}
+
+.product-info .price {
+  margin: 0;
+  color: #a855f7;
+  font-weight: 600;
+}
+
+.party-info {
+  text-align: right;
+  color: #ccc;
+  font-size: 14px;
+}
+
+.funds-hold-badge {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: rgba(234, 179, 8, 0.2);
+  color: #eab308;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.transaction-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  border-top: 1px solid #2a2a2a;
+  padding-top: 12px;
+}
+
+.transaction-actions button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.transaction-actions button:hover {
+  opacity: 0.9;
+}
+
+.btn-primary { background: #534ab7; color: white; }
+.btn-success { background: #22c55e; color: white; }
+.btn-danger { background: transparent; border: 1px solid #ef4444 !important; color: #ef4444; }
+
+.transaction-loading, .transaction-error, .transaction-empty {
+  padding: 40px;
+  text-align: center;
+  color: #888;
+  background: #1a1a2a;
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: #1a1a2a;
+  border: 1px solid #2a2a2a;
+  padding: 24px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+.btn-warning {
+  background: #eab308;
+  color: black;
+}
+
